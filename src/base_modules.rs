@@ -12,11 +12,6 @@ pub struct Sine {
 }
 
 impl Sine {
-    pub fn new() -> Self {
-        let mut s = Self::default();
-        s.set_freq(440.0);
-        s
-    }
     fn set_freq(&mut self, hz: f32) {
         self.b = hz * TAU / SAMPLE_RATE;
         self.cos_b = self.b.cos();
@@ -25,10 +20,11 @@ impl Sine {
 }
 
 impl Module for Sine {
-    fn num_inputs(&self) -> u8 { 0 }
+    fn num_inputs(&self) -> u8 { 1 }
     fn num_outputs(&self) -> u8 { 1 }
 
-    fn run(&mut self, _: &[Input], o: &[Output]) {
+    fn run(&mut self, i: &[Input], o: &[Output]) {
+        self.set_freq(440.0 * 2.0f32.powf(i[0].get()));
         let new_sin = 2.0 * self.cos_b * self.sin_a - self.sin_a_old;
         self.a += self.b;
         self.sin_a_old = self.sin_a;
@@ -54,5 +50,35 @@ impl Module for Mixer {
             }
         }
         &o[0] << if count > 0 { sum / count as f32 } else { 0.0 };
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct Vca {}
+
+impl Module for Vca {
+    fn num_inputs(&self) -> u8 { 2 }
+    fn num_outputs(&self) -> u8 { 1 }
+
+    fn run(&mut self, i: &[Input], o: &[Output]) {
+        &o[0] << i[0].get() * i[1].get();
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct Vco {
+    phase: f32,
+}
+
+impl Module for Vco {
+    fn num_inputs(&self) -> u8 { 1 }
+    fn num_outputs(&self) -> u8 { 1 }
+
+    fn run(&mut self, i: &[Input], o: &[Output]) {
+        let freq = 440.0 * 2.0f32.powf(i[0].get());
+
+        &o[0] << 2.0*(self.phase % 1.0) - 1.0;
+
+        self.phase += freq/SAMPLE_RATE;
     }
 }

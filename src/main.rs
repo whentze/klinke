@@ -3,9 +3,12 @@ use klinke::{base_modules::*, engine::AudioGraph};
 fn main() {
     let mut graph = AudioGraph::start();
 
-    let sine = graph.add_module(Sine::new());
+    let vco = graph.add_module(Vco::default());
+    let sine = graph.add_module(Sine::default());
 
-    graph.designate_output(sine, 0);
+    graph.connect(sine, 0, vco, 0);
+
+    graph.designate_output(vco, 0);
 
     loop{};
 }
